@@ -25,6 +25,17 @@ def extract_dialog(text: str, model: ChatModel):
         max_completion_tokens=16384,
         return_type="json",
     )
+    # 筛掉只含符号的
+    def is_punctuation_only(text: str):
+        return all(
+            c in "，。！？,.!?"
+            for c in text
+        )
+
+    dialogs = [
+        dialog for dialog in dialogs
+        if not is_punctuation_only(dialog["content"])   
+    ]
     return dialogs
 
 
