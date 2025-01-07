@@ -1,4 +1,8 @@
 .vscode
 __pycache__
-log
+.pytest_cache
+data
 results
+log
+
+*.wav
