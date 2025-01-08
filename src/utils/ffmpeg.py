@@ -16,7 +16,9 @@ def cut(input_path: str, output_path: str, start: int, end: int):
             "-c",
             "copy",
             output_path,
-        ]
+        ],
+        capture_output=True,
+        text=True,
     )
 
 
@@ -38,6 +40,7 @@ def create_silence(secs: int, file_path: str = None, sample_rate: int = 24000):
             file_path,
         ],
         capture_output=True,
+        text=True,
     )
     return file_path
 
@@ -78,11 +81,32 @@ def concat(audios: List[str], output_path: str, fade_durations: List[int] = None
         + input_args
         + ffmpeg_args
     )
-    subprocess.check_output(args)
+    subprocess.run(
+        args,
+        capture_output=True,
+        text=True,
+    )
 
 
 def merge(audios: List[str], output_path: str):
-    pass
+    input_args = []
+    for audio in audios:
+        input_args.extend(["-i", audio])
+    ffmpeg_args = [
+        "-filter_complex",
+        f"amix=inputs={len(audios)}:duration=longest",
+    ]
+    subprocess.run(
+        [
+            "ffmpeg",
+            "-y",
+            output_path,
+        ]
+        + input_args
+        + ffmpeg_args,
+        capture_output=True,
+        text=True,
+    )
 
 
 def _get_filter_complex(files, fade_durations, curve_type="tri"):
@@ -92,8 +116,11 @@ def _get_filter_complex(files, fade_durations, curve_type="tri"):
         last_output = "[0:a]"
 
         for i, (file, fade_duration) in enumerate(zip(files[1:], fade_durations)):
-            filter_complex += f"{last_output}[{i}:a]acrossfade=d={fade_duration}:c1={curve_type}:c2={curve_type}[a{i}]; "
-            last_output = f"[a{i}]"
+            # 在第一个音频的末尾添加静音
+            filter_complex += f"{last_output}apad=pad_dur={fade_duration}[a{i}]; "
+            # 淡入淡出效果
+            filter_complex += f"[a{i}][{i+1}:a]acrossfade=d={fade_duration}:c1={curve_type}:c2={curve_type}[b{i}]; "
+            last_output = f"[b{i}]"
 
         # 去掉最后一个分号和空格
         filter_complex = filter_complex.rstrip("; ")
