@@ -1,5 +1,13 @@
 # Radio Drama
 
+## Clone
+
+```bash
+git clone https://github.com/lyx0727/radio_drama.git
+cd radio_drama
+git submodule update --init --recursive
+```
+
 ## 环境
 
 安装 `conda` 环境
