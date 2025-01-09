@@ -6,6 +6,30 @@
 git clone https://github.com/lyx0727/radio_drama.git
 cd radio_drama
 git submodule update --init --recursive
+unzip src/audio/lib/CosyVoice/pretrained_models/CosyVoice-ttsfrd/resource.zip -d src/audio/lib/CosyVoice/pretrained_models/CosyVoice-ttsfrd/
+```
+
+### 下载
+wget https://drive.google.com/drive/folders/13Q9yoxrE83EahAb_7BaeawwjYE4QVGF8?usp=drive_link
+Simply run following command to download the weights from [Google drive](https://drive.google.com/drive/folders/1zZTI3-nHrUIywKFqwxlFO6PjB66JA8jI?usp=drive_link).
+Download CLAP weights from [Hugging Face](https://huggingface.co/microsoft/msclap/blob/main/CLAP_weights_2022.pth).
+
+```
+Download:
+    maa1_full.ckpt and put it into ./useful_ckpts  
+    BigVGAN vocoder and put it into ./useful_ckpts  
+    CLAP_weights_2022.pth and put it into ./useful_ckpts/CLAP
+```
+The directory structure should be:
+```
+useful_ckpts/
+├── bigvgan
+│   ├── args.yml
+│   └── best_netG.pt
+├── CLAP
+│   ├── config.yml
+│   └── CLAP_weights_2022.pth
+└── maa1_full.ckpt
 ```
 
 ## 环境

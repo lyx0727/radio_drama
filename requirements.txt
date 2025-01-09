@@ -50,5 +50,7 @@ torchlibrosa
 ftfy
 pytorch-lightning
 torchmetrics==0.11.1
+ttsfrd_dependency-0.1-py3-none-any.whl
+ttsfrd-0.4.2-cp310-cp310-linux_x86_64.whl
 -e git+https://github.com/CompVis/taming-transformers.git@master#egg=taming-transformers
 -e git+https://git@github.com/facebookresearch/audiocraft#egg=audiocraft

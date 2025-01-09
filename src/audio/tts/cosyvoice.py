@@ -26,7 +26,7 @@ class CosyVoiceTTSModel(TTSModel):
                     "qwen_pretrain_path": os.path.join(model_dir, "CosyVoice-BlankEN")
                 },
             )
-        self.model = CosyVoice2Model(configs["llm"], configs["flow"], configs["hift"])
+        self.model = CosyVoice2Model(configs["llm"], configs["flow"], configs["hift"], fp16=False)
         self.model.load(
             os.path.join(model_dir, "llm.pt"),
             os.path.join(model_dir, "flow.pt"),
