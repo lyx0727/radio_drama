@@ -88,6 +88,22 @@ def concat(audios: List[str], output_path: str, fade_durations: List[int] = None
     )
 
 
+def scale_volume(input_path: str, output_path: str, volume_rate: float):
+    subprocess.run(
+        [
+            "ffmpeg",
+            "-i",
+            input_path,
+            "-filter:a",
+            f"volume={volume_rate}",
+            "-y",
+            output_path,
+        ],
+        capture_output=True,
+        text=True,
+    )
+
+
 def merge(audios: List[str], output_path: str):
     input_args = []
     for audio in audios:
