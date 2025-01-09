@@ -1,7 +1,6 @@
-[submodule "CosyVoice"] 	
-    path = src/audio/lib/CosyVoice 	
-    url = https://github.com/FunAudioLLM/CosyVoice.git
-
-[submodule "Make-An-Audio"] 	
-    path = src/audio/lib/Make-An-Audio	
-    url = https://github.com/Text-to-Audio/Make-An-Audio.git
+[submodule "src/audio/lib/CosyVoice"]
+	path = src/audio/lib/CosyVoice
+	url = git@github.com:FunAudioLLM/CosyVoice.git
+[submodule "src/audio/lib/Make-An-Audio"]
+	path = src/audio/lib/Make-An-Audio
+	url = git@github.com:Text-to-Audio/Make-An-Audio.git
