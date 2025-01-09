@@ -37,6 +37,7 @@ def gen_speech(
         role_dic[role["name"]] = role
         for name in role["alias"]:
             role_dic[name] = role
+    # 固定旁白
     role_dic["旁白"] = {"name": "旁白", "gender": "男", "personality": "冷静客观平淡"}
 
     for dialog in dialogs:
@@ -54,6 +55,7 @@ def gen_speech(
         dialog["personality"] = role["personality"]
         dialog["gender"] = role["gender"]
 
+    # 注册音色对应的音源文件
     for timbre_key, speech_file in (male_speech_map | female_speech_map).items():
         model.register(timbre_key, speech_file)
 
@@ -67,6 +69,7 @@ def gen_speech(
         else:
             raise ValueError(f"Speech file {v} not found in male or female speech map")
 
+    # 从给定的音色表基础上初始化 LRU 分配器
     male_timbre_allocator = LRUAllocator(
         candidates=list(male_speech_map.keys()),
         allocated=male_timbre_map,
@@ -88,6 +91,7 @@ def gen_speech(
 
         role_name = _get_role_name(dialog)
 
+        # 分配音色
         if dialog["gender"] == "女":
             speech_key = female_timbre_allocator.get(role_name)
         else:
@@ -134,6 +138,7 @@ def _get_instruct_text(dialog: Dict[str, str]):
         dialog["speed"],
         dialog["instruct"],
     )
+    # 旁白忽略设置的情感、语气，速度保持正常语速
     if dialog["role"] == "旁白":
         instruct = None
         emo = None
