@@ -2,7 +2,7 @@ from typing import Dict, List
 import os, json
 from tqdm import tqdm
 
-from ..utils.ffmpeg import create_silence, concat
+from ..utils.ffmpeg import create_silence, concat, cut
 from ..utils.chat_model import ChatModel
 
 from .lib.CosyVoice.cosyvoice.utils.file_utils import load_wav
@@ -63,7 +63,7 @@ def gen_audio_desc(
 def gen_audio(audio_descs: List[Dict], output_dir: str, model: TTAModel):
     for i, audio in enumerate(tqdm(audio_descs)):
         desc = audio["audio_desc"]
-        duration = min(audio["end"] - audio["start"], 3)
+        duration = min(audio["end"] - audio["start"], 300)
         output_path = os.path.join(output_dir, f"audio_{i}.wav")
         if os.path.exists(output_path):
             continue
@@ -74,24 +74,27 @@ def gen_audio(audio_descs: List[Dict], output_dir: str, model: TTAModel):
         )
 
     audio_files = []
+
+    durations = [min(10, audio["end"] - audio["start"]) for audio in audio_descs] + [0]
     fade_durations = []
     end = 0
-    last_duration = 100
     for j, audio in enumerate(audio_descs):
         if audio["start"] > end:
+            silence_duration = audio['start'] - end + min(3, durations[j - 1]) + min(3, durations[j])
             silence_file = os.path.join(
-                output_dir, f"silence_{audio['start'] - end}.wav"
+                output_dir, f"silence_{silence_duration}.wav"
             )
-            create_silence(audio["start"] - end, silence_file)
+            create_silence(silence_duration, silence_file)
             audio_files.append(silence_file)
-            fade_durations.append(min(2, min(last_duration, audio["start"] - end)))
-            last_duration = audio["start"] - end
+            fade_durations.append(min(3, durations[j - 1]))
+            fade_durations.append(min(3, durations[j]))
+        elif j > 0:
+            fade_durations.append(0)
         audio_file = os.path.join(output_dir, f"audio_{j}.wav")
         audio_files.append(audio_file)
-        duration = min(3, audio["end"] - audio["start"])
-        fade_durations.append(min(2, min(last_duration, duration)))
-        last_duration = duration
-        end = audio["start"] + duration
+        end = audio['start'] + durations[j]
+    for file, fade_duration in zip(audio_files, fade_durations):
+        print(file, get_wav_secs(file), fade_duration)
     concat(audio_files, os.path.join(output_dir, "audio.wav"), fade_durations)
 
 

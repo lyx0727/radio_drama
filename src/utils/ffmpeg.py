@@ -132,11 +132,8 @@ def _get_filter_complex(files, fade_durations, curve_type="tri"):
         last_output = "[0:a]"
 
         for i, (file, fade_duration) in enumerate(zip(files[1:], fade_durations)):
-            # 在第一个音频的末尾添加静音
-            filter_complex += f"{last_output}apad=pad_dur={fade_duration}[a{i}]; "
-            # 淡入淡出效果
-            filter_complex += f"[a{i}][{i+1}:a]acrossfade=d={fade_duration}:c1={curve_type}:c2={curve_type}[b{i}]; "
-            last_output = f"[b{i}]"
+            filter_complex += f"{last_output}[{i + 1}:a]acrossfade=d={fade_duration}:c1={curve_type}:c2={curve_type}[a{i}]; "
+            last_output = f"[a{i}]"
 
         # 去掉最后一个分号和空格
         filter_complex = filter_complex.rstrip("; ")
