@@ -86,7 +86,33 @@ def gen_speech(
         output_file = os.path.join(output_dir, f"{tts_key}.wav")
         if os.path.exists(output_file):
             continue
+        import re
+        tags = [
+            "[breath]",
+            "[noise]",
+            "[laughter]",
+            "[cough]",
+            "[clucking]",
+            "[accent]",
+            "[quick_breath]",
+            "[hissing]",
+            "[sigh]",
+            "[vocalized-noise",
+            "[lipsmack]",
+            "[mn]",
+            "<strong>", "</strong>"
+            "<laughter>", "</laughter>"
+        ]
+        def is_valid_tag(match):
+            return match.group(0) in tags
+
+        pattern = re.compile(r"\[[^\]]*\]|<[^>]*>")
+
+        # 删除不合法标签
         tts_text = dialog["content"]
+        tts_text = pattern.sub(
+            lambda match: match.group(0) if is_valid_tag(match) else "", tts_text
+        )
         instruct_text = _get_instruct_text(dialog)
 
         role_name = _get_role_name(dialog)
@@ -171,8 +197,6 @@ def _transform_os(file: str):
             "ffmpeg",
             "-i",
             origin_file,
-            "-filter:a",
-            "volume=0.5",
             "-af",
             "aecho=0.5:0.8:50:0.8",
             "-y",
