@@ -141,7 +141,7 @@ def gen_speech(
         audio_files.append(audio_file)
 
         interval = intervals[idx]["interval"]
-        if interval > 0:
+        if interval:
             silence_file = os.path.join(output_dir, f"silence_{interval}.wav")
             create_silence(interval, silence_file)
             audio_files.append(silence_file)

@@ -40,7 +40,7 @@ def gen_audio_desc(
         speech_file = os.path.join(speech_source_dir, f"{dialog['role']}_{i}.wav")
         speech = load_wav(speech_file, 16000)
         speech_secs = speech.shape[1] // 16000
-        interval_secs = intervals[i]["interval"]
+        interval_secs = intervals[i]["interval"] if intervals[i]["interval"] else 0
         new_dialogs.append(
             {
                 "role": dialog["role"],
@@ -93,8 +93,6 @@ def gen_audio(audio_descs: List[Dict], output_dir: str, model: TTAModel):
         audio_file = os.path.join(output_dir, f"audio_{j}.wav")
         audio_files.append(audio_file)
         end = audio['start'] + durations[j]
-    for file, fade_duration in zip(audio_files, fade_durations):
-        print(file, get_wav_secs(file), fade_duration)
     concat(audio_files, os.path.join(output_dir, "audio.wav"), fade_durations)
 
 
