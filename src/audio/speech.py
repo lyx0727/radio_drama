@@ -38,7 +38,7 @@ def gen_speech(
         for name in role["alias"]:
             role_dic[name] = role
     # 固定旁白
-    role_dic["旁白"] = {"name": "旁白", "gender": "男", "personality": "冷静客观平淡"}
+    role_dic["旁白"] = {"name": "旁白", "gender": "男", "personality": "冷静客观平淡", "alias": []}
 
     for dialog in dialogs:
         if dialog["instruct"] is None:
@@ -64,8 +64,14 @@ def gen_speech(
     for k, v in role_timbre_map.items():
         if v in male_speech_map.keys():
             male_timbre_map[k] = v
+            if k in role_dic:
+                for alias in role_dic[k]["alias"]:
+                    male_timbre_map[alias] = v
         elif v in female_speech_map.keys():
             female_timbre_map[k] = v
+            if k in role_dic:
+                for alias in role_dic[k]["alias"]:
+                    female_timbre_map[alias] = v
         else:
             raise ValueError(f"Speech file {v} not found in male or female speech map")
 
