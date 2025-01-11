@@ -3,6 +3,7 @@ import logging
 import os
 import json
 
+from src.dialog import split_text
 from src.audio import gen_audio_desc, gen_audio, gen_speech, get_wav_secs
 from src.utils.chat_model import OpenAIChatModel
 from src.audio.tta import MakeAnAudioTTAModel, AudioGenTTAModel
@@ -46,18 +47,8 @@ def main():
     args = parser.parse_args()
     text_file_name = os.path.basename(args.text_file).split(".")[0]
 
-    dialog_file = os.path.join("results", "dialog", f"{text_file_name}.json")
-    assert os.path.exists(dialog_file), f"Run process_text.py first"
-    dialogs = json.load(open(dialog_file))
-    
-    interval_file = os.path.join("results", "dialog", f"interval_{text_file_name}.json")
-    intervals = json.load(open(interval_file))
-
-    role_file = os.path.join("results", "dialog", f"role_{text_file_name}.json")
-    roles = json.load(open(role_file))
-
-    logger.info(f"Load {len(dialogs)} dialogs, {len(roles)} roles from {args.text_file}")
-
+    dialog_dir = os.path.join("results", "dialog", f"{text_file_name}")
+    assert os.path.exists(dialog_dir), f"Run process_text.py first"
 
     # 载入音源
     male_speech_map = {}
@@ -78,53 +69,69 @@ def main():
     else:
         role_timbre_map = {}
 
-    speech_output_dir = os.path.join("results", f"speech_{text_file_name}") 
+    speech_output_dir = os.path.join("results", "speech", text_file_name)
+    os.makedirs(os.path.join("results", "speech"), exist_ok=True)
     os.makedirs(speech_output_dir, exist_ok=True)
-    logger.info("Generating speech...")
-    role_timbre_map = gen_speech(
-        dialogs=dialogs,
-        roles=roles,
-        intervals=intervals,
-        model=init_tts_model(args.tts_model),
-        output_dir=speech_output_dir,
-        role_timbre_map=role_timbre_map,
-        male_speech_map=male_speech_map,
-        female_speech_map=female_speech_map,
-    )
-    speech_output_file = os.path.join(speech_output_dir, "speech.wav")
-    logger.info(f"Generating {get_wav_secs(speech_output_file)}s speech")
 
-    with open(args.role_timbre_file, "w") as f:
-        json.dump(role_timbre_map, f, indent=4, ensure_ascii=False)
+    for i in range(len(split_text(args.text_file))):
+        dialog_file = os.path.join(dialog_dir, f"dialog_{i}.json")
+        dialogs = json.load(open(dialog_file))
+        
+        interval_file = os.path.join(dialog_dir, f"interval_{i}.json")
+        intervals = json.load(open(interval_file))
 
-    logger.info("Generating audio description...")
-    
-    audio_output_dir = speech_output_dir
-    audio_desc_file = os.path.join(audio_output_dir, "audio_desc.json")
-    if os.path.exists(audio_desc_file):
-        logger.info(f"Already exists: {audio_desc_file}")
-        with open(audio_desc_file, "r") as f:
-            audio_descs = json.load(f)
-    else:
-        audio_descs = gen_audio_desc(
+        role_file = os.path.join(dialog_dir, f"role_{i}.json")
+        roles = json.load(open(role_file))
+
+        logger.info(f"Load {len(dialogs)} dialogs, {len(roles)} roles from {text_file_name}_{i}")
+
+        logger.info("Generating speech...")
+        chunk_speech_output_dir = os.path.join(speech_output_dir, str(i))
+        os.makedirs(chunk_speech_output_dir, exist_ok=True)
+        role_timbre_map = gen_speech(
             dialogs=dialogs,
+            roles=roles,
             intervals=intervals,
-            speech_source_dir=speech_output_dir,
-            model=init_chat_model(args.chat_model),
+            model=init_tts_model(args.tts_model),
+            output_dir=chunk_speech_output_dir,
+            role_timbre_map=role_timbre_map,
+            male_speech_map=male_speech_map,
+            female_speech_map=female_speech_map,
         )
-        with open(audio_desc_file, "w") as f:
-            json.dump(audio_descs, f, indent=4, ensure_ascii=False)
-        logger.info(f"Generate {len(audio_descs)} audio description")
-        logger.info(f"Save audio description to {audio_desc_file}")
+        speech_output_file = os.path.join(chunk_speech_output_dir, f"speech.wav")
+        logger.info(f"Generating {get_wav_secs(speech_output_file)}s speech")
 
-    logger.info("Generating audio...")
-    gen_audio(
-        audio_descs=audio_descs,
-        output_dir=audio_output_dir,
-        model=init_tta_model(args.tta_model),
-    )
-    audio_output_file = os.path.join(audio_output_dir, "audio.wav")
-    logger.info(f"Generating {get_wav_secs(audio_output_file)}s audio")
+        with open(args.role_timbre_file, "w") as f:
+            json.dump(role_timbre_map, f, indent=4, ensure_ascii=False)
+
+        logger.info("Generating audio description...")
+        
+        chunk_audio_output_dir = chunk_speech_output_dir
+        audio_desc_file = os.path.join(chunk_audio_output_dir, "audio_desc.json")
+        if os.path.exists(audio_desc_file):
+            logger.info(f"Already exists: {audio_desc_file}")
+            with open(audio_desc_file, "r") as f:
+                audio_descs = json.load(f)
+        else:
+            audio_descs = gen_audio_desc(
+                dialogs=dialogs,
+                intervals=intervals,
+                speech_source_dir=chunk_speech_output_dir,
+                model=init_chat_model(args.chat_model),
+            )
+            with open(audio_desc_file, "w") as f:
+                json.dump(audio_descs, f, indent=4, ensure_ascii=False)
+            logger.info(f"Generate {len(audio_descs)} audio description")
+            logger.info(f"Save audio description to {audio_desc_file}")
+
+        logger.info("Generating audio...")
+        gen_audio(
+            audio_descs=audio_descs,
+            output_dir=chunk_audio_output_dir,
+            model=init_tta_model(args.tta_model),
+        )
+        audio_output_file = os.path.join(chunk_audio_output_dir, "audio.wav")
+        logger.info(f"Generating {get_wav_secs(audio_output_file)}s audio")
 
 
 if __name__ == "__main__":
